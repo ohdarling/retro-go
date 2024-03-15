@@ -22,6 +22,7 @@
 #include <unistd.h>
 #endif
 
+static rg_storage_counters_t counters;
 static bool disk_mounted = false;
 static bool disk_led = true;
 
@@ -48,6 +49,7 @@ bool rg_storage_get_activity_led(void)
 #if RG_STORAGE_DRIVER == 1 || RG_STORAGE_DRIVER == 2
 static esp_err_t sdcard_do_transaction(int slot, sdmmc_command_t *cmdinfo)
 {
+    int64_t start_time = rg_system_timer();
     bool use_led = (disk_led && !rg_system_get_led());
 
     if (use_led)
@@ -63,6 +65,9 @@ static esp_err_t sdcard_do_transaction(int slot, sdmmc_command_t *cmdinfo)
 
     if (use_led)
         rg_system_set_led(0);
+
+    counters.transactions++;
+    counters.busyTime += rg_system_timer() - start_time;
 
     return ret;
 }
@@ -212,6 +217,11 @@ void rg_storage_commit(void)
     if (!disk_mounted)
         return;
     // flush buffers();
+}
+
+rg_storage_counters_t rg_storage_get_counters(void)
+{
+    return counters;
 }
 
 bool rg_storage_mkdir(const char *dir)

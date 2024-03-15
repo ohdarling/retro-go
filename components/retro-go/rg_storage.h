@@ -53,6 +53,12 @@ typedef struct
     bool exists;
 } rg_stat_t;
 
+typedef struct
+{
+    int transactions;
+    int busyTime;
+} rg_storage_counters_t;
+
 void rg_storage_init(void);
 void rg_storage_deinit(void);
 bool rg_storage_format(void);
@@ -67,3 +73,4 @@ bool rg_storage_exists(const char *path);
 bool rg_storage_mkdir(const char *dir);
 bool rg_storage_scandir(const char *path, rg_scandir_cb_t *callback, void *arg, uint32_t flags);
 rg_stat_t rg_storage_stat(const char *path);
+rg_storage_counters_t rg_storage_get_counters(void);

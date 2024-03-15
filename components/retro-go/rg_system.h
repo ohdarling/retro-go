@@ -196,6 +196,8 @@ typedef struct
     int64_t lastTick;
     int ticks;
     int uptime;
+    int displayTransactions;
+    int sdcardTransactions;
     int totalMemoryInt;
     int totalMemoryExt;
     int freeMemoryInt;

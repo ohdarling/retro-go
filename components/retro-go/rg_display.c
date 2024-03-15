@@ -86,6 +86,7 @@ static inline void spi_queue_transaction(const void *data, size_t length, uint32
     {
         RG_PANIC("display");
     }
+    counters.spiTransfers++;
 }
 
 IRAM_ATTR

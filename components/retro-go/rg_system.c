@@ -39,6 +39,7 @@ typedef struct
 {
     int32_t totalFrames, fullFrames, partFrames, ticks;
     int64_t busyTime, updateTime;
+    int32_t displayTransactions, sdcardTransactions;
 } counters_t;
 
 typedef struct
@@ -132,6 +133,7 @@ static void update_statistics(void)
     const counters_t previous = counters;
 
     rg_display_counters_t display = rg_display_get_counters();
+    rg_storage_counters_t storage = rg_storage_get_counters();
     // rg_audio_counters_t audio = rg_audio_get_counters();
 
     counters.totalFrames = display.totalFrames;
@@ -140,6 +142,8 @@ static void update_statistics(void)
     counters.busyTime = statistics.busyTime;
     counters.ticks = statistics.ticks;
     counters.updateTime = statistics.lastTick;
+    counters.displayTransactions = display.spiTransfers;
+    counters.sdcardTransactions = storage.transactions;
 
     // We prefer to use the tick time for more accurate FPS
     // but if we're not ticking, we need to use current time
@@ -164,6 +168,8 @@ static void update_statistics(void)
         statistics.skippedFPS = (ticks - frames) / totalTimeSecs;
         statistics.fullFPS = fullFrames / totalTimeSecs;
         statistics.partialFPS = partFrames / totalTimeSecs;
+        statistics.displayTransactions = counters.displayTransactions - previous.displayTransactions;
+        statistics.sdcardTransactions = counters.sdcardTransactions - previous.sdcardTransactions;
     }
     statistics.uptime = rg_system_timer() / 1000000;
 
@@ -194,7 +200,7 @@ static void system_monitor_task(void *arg)
         }
 
         // Try to avoid complex conversions that could allocate, prefer rounding/ceiling if necessary.
-        rg_system_log(RG_LOG_DEBUG, NULL, "STACK:%d, HEAP:%d+%d (%d+%d), BUSY:%d%%, FPS:%d (%d+%d+%d), BATT:%d\n",
+        rg_system_log(RG_LOG_DEBUG, NULL, "STACK:%d, HEAP:%d+%d (%d+%d), BUSY:%d%%, FPS:%d (%d+%d+%d), BATT:%d DISP:%d SD:%d\n",
             statistics.freeStackMain,
             statistics.freeMemoryInt / 1024,
             statistics.freeMemoryExt / 1024,
@@ -205,7 +211,9 @@ static void system_monitor_task(void *arg)
             (int)roundf(statistics.skippedFPS),
             (int)roundf(statistics.partialFPS),
             (int)roundf(statistics.fullFPS),
-            (int)roundf((battery.volts * 1000) ?: battery.level));
+            (int)roundf((battery.volts * 1000) ?: battery.level),
+            statistics.displayTransactions,
+            statistics.sdcardTransactions);
 
         // Auto frameskip
         if (statistics.ticks > app.tickRate * 2)

@@ -59,6 +59,7 @@ typedef struct
     int32_t partFrames;
     int64_t blockTime;
     int64_t busyTime;
+    int64_t spiTransfers;
 } rg_display_counters_t;
 
 typedef struct
