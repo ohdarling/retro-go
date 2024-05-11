@@ -259,6 +259,7 @@ static void lcd_init(void)
     // Borrowed from https://github.com/jobitjoseph/retro-go-ST7789
     ILI9341_CMD(0x01);     // Reset
     ILI9341_CMD(0x3A, 0x55); // Pixel Format Set RGB565
+    ILI9341_CMD(0x21);  // Invert Display: 0x21 On, 0x20 Off
     ILI9341_CMD(0xCF, 0x00, 0xc3, 0x30);
     ILI9341_CMD(0xED, 0x64, 0x03, 0x12, 0x81);
     ILI9341_CMD(0xE8, 0x85, 0x00, 0x78);
