@@ -1,4 +1,11 @@
-Newton
+Newton 002
+
+usage: rg_tool.py [-h] [--target {odroid-go,qtpy-gamer,esplay-s3,mrgc-gbm,sdl2,esp32s3-devkit-c,esplay-micro,mrgc-g32,retro-esp32}] [--no-networking]
+                  [--port PORT] [--baud BAUD]
+                  {build-fw,build-img,release,build,clean,flash,monitor,run,profile} [{all,launcher,retro-core,prboom-go,gwenesis,fmsx} ...]
+rg_tool.py: error: the following arguments are required: command
+
+python rg_tool.py  build-img --target esp32s3-devkit-c
 
 # Table of contents
 - [Description](#description)
