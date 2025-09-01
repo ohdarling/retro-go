@@ -1,57 +1,36 @@
-# Table of contents
-- [Description](#description)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Issues](#issues)
-- [Theming](#theming)
-- [Building](#building)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
 
-# Description
-Retro-Go is a firmware to play retro games on ESP32-based devices (officially supported are
-ODROID-GO and MRGC-G32). The project consists of a launcher and half a dozen applications that
-have been heavily optimized to reduce their cpu, memory, and flash needs without reducing
-compatibility!
+-------------
+sudo apt update
+sudo apt-get install libusb-1.0-0-dev
 
-### Supported systems:
-- Nintendo: **NES, SNES (slow), Gameboy, Gameboy Color, Game & Watch**
-- Sega: **SG-1000, Master System, Mega Drive / Genesis, Game Gear**
-- Coleco: **Colecovision**
-- NEC: **PC Engine**
-- Atari: **Lynx**
-- Others: **DOOM** (including mods!)
-
-### Retro-Go features:
-- In-game menu
-- Favorites and recently played
-- GB color palettes, RTC adjust and save
-- NES color palettes, PAL roms, NSF support
-- More emulators and applications
-- Scaling and filtering options
-- Better performance and compatibility
-- Turbo Speed/Fast forward
-- Customizable launcher
-- Cover art and save state previews
-- Multiple save slots per game
-- Wifi file manager
-- And more!
-
-### Screenshots
-![Preview](assets/retro-go-preview.jpg)
+mkdir -p ~/esp
+cd ~/esp
+git clone -b release/v4.3 --recursive https://github.com/espressif/esp-idf.git
 
 
-# Installation
+cd ~/esp/esp-idf
+./install.sh esp32,esp32c3,esp32s3
 
-### ODROID-GO
-  1. Download `retro-go_1.x_odroid-go.fw` from the release page and copy it to `/odroid/firmware` on your sdcard.
-  2. Power up the device while holding down B.
-  3. Select retro-go in the files list and flash it.
+. $HOME/esp/esp-idf/export.sh
 
-### MyRetroGameCase G32 (GBC)
-  1. Download `retro-go_1.x_mrgc-g32.fw` from the release page and copy it to `/espgbc/firmware` on your sdcard.
-  2. Power up the device while holding down MENU (the volume knob).
-  3. Select retro-go in the files list and flash it.
+
+要clean一下
+python rg_tool.py clean
+
+python rg_tool.py build-img --target=esp32s3-devkit-c
+
+python rg_tool.py build-img
+
+
+--------------
+
+usage: rg_tool.py [-h] [--target {odroid-go,qtpy-gamer,esplay-s3,mrgc-gbm,sdl2,esp32s3-devkit-c,esplay-micro,mrgc-g32,retro-esp32}] [--no-networking]
+                  [--port PORT] [--baud BAUD]
+                  {build-fw,build-img,release,build,clean,flash,monitor,run,profile} [{all,launcher,retro-core,prboom-go,gwenesis,fmsx} ...]
+rg_tool.py: error: the following arguments are required: command
+
+python rg_tool.py  build-img --target esp32s3-devkit-c
+
 
 ### Generic ESP32
 This method is intended to be used when .fw support isn't available (when porting to a new device) or undesirable (devices with smaller flash).
