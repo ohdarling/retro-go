@@ -304,17 +304,36 @@ static size_t get_glyph(uint32_t *output, const rg_font_t *font, int points, uin
             for (int y = 0; y < dst_size; y++) output[y] = 0;
             if (found)
             {
+                // Scale src_size×src_size bitmap to dst_size×dst_size
+                // Use OR-merge: each dest pixel/row collects ALL source pixels/rows
+                // that map to it, so single-pixel strokes are never lost.
                 for (int dy = 0; dy < dst_size; dy++)
                 {
-                    int sy = dy * src_size / dst_size;
+                    int sy0 = dy * src_size / dst_size;
+                    int sy1 = (dy + 1) * src_size / dst_size;
+                    if (sy1 <= sy0) sy1 = sy0 + 1;
+
+                    // OR all source rows that map to this dest row
+                    uint16_t merged = 0;
+                    for (int sy = sy0; sy < sy1 && sy < src_size; sy++)
+                        merged |= ((uint16_t)found[sy * 2] << 8) | found[sy * 2 + 1];
+
                     // Stored MSB=leftmost; rendering expects bit x = pixel x (LSB=left)
-                    uint16_t row = ((uint16_t)found[sy * 2] << 8) | found[sy * 2 + 1];
                     uint32_t out_row = 0;
                     for (int dx = 0; dx < dst_size; dx++)
                     {
-                        int sx = dx * src_size / dst_size;
-                        if (row & (1 << (src_size - 1 - sx)))
-                            out_row |= (1 << dx);
+                        int sx0 = dx * src_size / dst_size;
+                        int sx1 = (dx + 1) * src_size / dst_size;
+                        if (sx1 <= sx0) sx1 = sx0 + 1;
+
+                        for (int sx = sx0; sx < sx1 && sx < src_size; sx++)
+                        {
+                            if (merged & (1 << (src_size - 1 - sx)))
+                            {
+                                out_row |= (1 << dx);
+                                break;
+                            }
+                        }
                     }
                     output[dy] = out_row;
                 }
