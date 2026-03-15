@@ -12,6 +12,7 @@ extern const rg_font_t font_DejaVu12;
 extern const rg_font_t font_DejaVu15;
 extern const rg_font_t font_VeraBold12;
 extern const rg_font_t font_VeraBold15;
+extern const rg_font_t font_ZenHei16;
 
 enum {
     RG_FONT_BASIC_8,

@@ -11,6 +11,32 @@
 #include "bitmaps/image_hourglass.h"
 #include "fonts/fonts.h"
 
+// Decode one UTF-8 codepoint from *ptr and advance it.
+// Returns 0 on null terminator.
+static uint32_t utf8_next(const char **ptr)
+{
+    const unsigned char *s = (const unsigned char *)*ptr;
+    uint32_t cp;
+    if (*s == 0) return 0;
+    if (*s < 0x80) {
+        cp = *s++;
+    } else if (*s < 0xE0) {
+        cp  = (*s++ & 0x1F) << 6;
+        cp |= (*s++ & 0x3F);
+    } else if (*s < 0xF0) {
+        cp  = (*s++ & 0x0F) << 12;
+        cp |= (*s++ & 0x3F) << 6;
+        cp |= (*s++ & 0x3F);
+    } else {
+        cp  = (*s++ & 0x07) << 18;
+        cp |= (*s++ & 0x3F) << 12;
+        cp |= (*s++ & 0x3F) << 6;
+        cp |= (*s++ & 0x3F);
+    }
+    *ptr = (const char *)s;
+    return cp;
+}
+
 static struct
 {
     uint16_t *screen_buffer, *draw_buffer;
@@ -246,10 +272,59 @@ void rg_gui_copy_buffer(int left, int top, int width, int height, int stride, co
     }
 }
 
-static size_t get_glyph(uint32_t *output, const rg_font_t *font, int points, int c)
+static size_t get_glyph(uint32_t *output, const rg_font_t *font, int points, uint32_t codepoint)
 {
-    // Some glyphs are always zero width
-    if (!font || c == '\r' || c == '\n' || c < 8 || c > 254)
+    // Control characters and null are always zero width
+    if (!font || codepoint == '\r' || codepoint == '\n' || codepoint < 8)
+        return 0;
+
+    // Non-ASCII: look up in the CJK font (type 2, 16x16 bitmap, binary search)
+    if (codepoint > 0xFF)
+    {
+        extern const rg_font_t font_ZenHei16;
+        const rg_font_t *cjk = &font_ZenHei16;
+        int src_size = cjk->height;                     // 16
+        int dst_size = (points > 0) ? points : src_size;
+        int stride   = 2 + src_size * 2;                // 34 bytes per entry
+
+        const uint8_t *found = NULL;
+        int lo = 0, hi = (int)cjk->chars - 1;
+        while (lo <= hi)
+        {
+            int mid = (lo + hi) / 2;
+            const uint8_t *entry = cjk->data + mid * stride;
+            uint32_t entry_cp = ((uint32_t)entry[0] << 8) | entry[1];
+            if (entry_cp == codepoint)      { found = entry + 2; break; }
+            else if (entry_cp < codepoint)  lo = mid + 1;
+            else                            hi = mid - 1;
+        }
+
+        if (output)
+        {
+            for (int y = 0; y < dst_size; y++) output[y] = 0;
+            if (found)
+            {
+                for (int dy = 0; dy < dst_size; dy++)
+                {
+                    int sy = dy * src_size / dst_size;
+                    // Stored MSB=leftmost; rendering expects bit x = pixel x (LSB=left)
+                    uint16_t row = ((uint16_t)found[sy * 2] << 8) | found[sy * 2 + 1];
+                    uint32_t out_row = 0;
+                    for (int dx = 0; dx < dst_size; dx++)
+                    {
+                        int sx = dx * src_size / dst_size;
+                        if (row & (1 << (src_size - 1 - sx)))
+                            out_row |= (1 << dx);
+                    }
+                    output[dy] = out_row;
+                }
+            }
+        }
+        return (size_t)dst_size; // CJK chars are always square
+    }
+
+    int c = (int)codepoint;
+    if (c > 254)
         return 0;
 
     size_t glyph_width = font->width;
@@ -353,7 +428,7 @@ rg_rect_t rg_gui_draw_text(int x_pos, int y_pos, int width, const char *text, //
         int line_width = padding * 2;
         for (const char *ptr = text; *ptr;)
         {
-            int chr = *ptr++;
+            uint32_t chr = utf8_next(&ptr);
             line_width += monospace ?: get_glyph(NULL, font, font_height, chr);
 
             if (chr == '\n' || *ptr == 0)
@@ -387,7 +462,7 @@ rg_rect_t rg_gui_draw_text(int x_pos, int y_pos, int width, const char *text, //
             const char *line = ptr;
             while (x_offset < draw_width && *line && *line != '\n')
             {
-                int chr = *line++;
+                uint32_t chr = utf8_next(&line);
                 int width = monospace ?: get_glyph(NULL, font, font_height, chr);
                 if (draw_width - x_offset < width) // Do not truncate glyphs
                     break;
@@ -407,13 +482,15 @@ rg_rect_t rg_gui_draw_text(int x_pos, int y_pos, int width, const char *text, //
         while (x_offset < draw_width)
         {
             uint32_t bitmap[32] = {0};
-            int glyph_width = get_glyph(bitmap, font, font_height, *ptr++);
+            const char *char_start = ptr;
+            uint32_t codepoint = utf8_next(&ptr);
+            int glyph_width = get_glyph(bitmap, font, font_height, codepoint);
             int width = monospace ?: glyph_width;
 
             if (draw_width - x_offset < width) // Do not truncate glyphs
             {
                 if (flags & RG_TEXT_MULTILINE)
-                    ptr--;
+                    ptr = char_start; // back up by full UTF-8 character
                 break;
             }
 
