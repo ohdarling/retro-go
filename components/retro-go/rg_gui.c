@@ -357,11 +357,13 @@ static size_t get_glyph(uint32_t *output, const rg_font_t *font, int points, int
         }
         return RG_MAX(width, xDelta);
     }
-    // else if (font != &font_basic8x8) // Glyph not found, try fallback font
-    // {
-    //     return get_glyph(output, &font_basic8x8, points, c);
-    // }
-    else // Glyph not found, no fallback
+    else if (c > 0xFF) // Glyph not found in primary font, try CJK fallback
+    {
+        extern const rg_font_t font_ZenHei16;
+        if (font != &font_ZenHei16)
+            return get_glyph(output, &font_ZenHei16, points, c);
+    }
+    // else // Glyph not found, no fallback
     {
         size_t box_width = font->width ?: 8;
         if (output) // draw missing box

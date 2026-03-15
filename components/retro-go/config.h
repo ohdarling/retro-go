@@ -8,6 +8,8 @@
 #include "targets/esp32-s3-devkit/config.h"
 #elif defined(RG_TARGET_ESP32_P4_DEVKIT)
 #include "targets/esp32-p4-devkit/config.h"
+#elif defined(RG_TARGET_ESP32S3_OHDA)
+#include "targets/esp32s3-ohda/config.h"
 #elif defined(RG_TARGET_ESPLAY_MICRO)
 #include "targets/esplay-micro/config.h"
 #elif defined(RG_TARGET_FRI3D_2024)
