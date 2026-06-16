@@ -44,7 +44,7 @@
 #define RG_SCREEN_BACKLIGHT         1
 #define RG_SCREEN_WIDTH             320
 #define RG_SCREEN_HEIGHT            240
-#define RG_SCREEN_ROTATION          0
+#define RG_SCREEN_ROTATION          6   // 6 = MX+MY (0xC0) = 180° flip for new ST7789 panel
 #define RG_SCREEN_RGB_BGR           1
 #define RG_SCREEN_PIXEL_FORMAT      0   // 0=565_BE, 1=565_LE
 #define RG_SCREEN_VISIBLE_AREA      {0, 0, 0, 0} // left, top, right, bottom
@@ -68,7 +68,7 @@
     ILI9341_CMD(0x26, 0x01);                 /* Gamma curve selected */                                          \
     ILI9341_CMD(0xE0, 0xD0, 0x00, 0x05, 0x0E, 0x15, 0x0D, 0x37, 0x43, 0x47, 0x09, 0x15, 0x12, 0x16, 0x19);     \
     ILI9341_CMD(0xE1, 0xD0, 0x00, 0x05, 0x0D, 0x0C, 0x06, 0x2D, 0x44, 0x40, 0x0E, 0x1C, 0x18, 0x16, 0x19);   \
-    ILI9341_CMD(0x21);                      /* Display Inversion ON (required for ST7789V) */
+    ILI9341_CMD(0x20);                      /* Display Inversion OFF (new ST7789 panel; ST7789V used 0x21) */
 #define RG_SCREEN_DEINIT() \
     /* Nothing to do */
 #define RG_GPIO_LCD_MISO            GPIO_NUM_NC
